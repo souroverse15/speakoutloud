@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Speak Out Loud!</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <script>
+        function showProgressPopup() {
+            const popup = document.getElementById('progressPopup');
+            popup.innerHTML = '<img src="https://i.gifer.com/551N.gif" alt="Processing"><p>Processing...</p>';
+            popup.style.display = 'flex';
+        }
+
+        function hideProgressPopup() {
+            document.getElementById('progressPopup').style.display = 'none';
+        }
+
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            showProgressPopup();
+            const form = event.target;
+
+            const formData = new FormData(form);
+            fetch(form.action, {
+                method: form.method,
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.errors) {
+                    document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/76cI.gif" alt="Error"><p>' + data.errors.join('<br>') + '</p><button onclick="hideProgressPopup()">Close</button>';
+                } else if (data.error) {
+                    document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/76cI.gif" alt="Error"><p>' + data.error + '</p><button onclick="hideProgressPopup()">Close</button>';
+                } else {
+                    document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/7efs.gif" alt="Success"><p>Emails sent successfully!</p><button onclick="hideProgressPopup()">Close</button>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/76cI.gif" alt="Error"><p>An unexpected error occurred</p><button onclick="hideProgressPopup()">Close</button>';
+            });
+        }
+    </script>
+</head>
+<body>
+    <div id="progressPopup" class="progress-popup">
+        <img src="https://i.gifer.com/551N.gif" alt="Processing">
+        <p>Processing...</p>
+    </div>
+
+    <h1>Speak Out Loud!</h1>
+    <form action="/" method="post" onsubmit="handleFormSubmit(event)">
+        <label for="email">Your Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+
+        <label for="evidence_links">Evidence Links (one per line):</label>
+        <textarea id="evidence_links" name="evidence_links" rows="5" required></textarea>
+
+        <p><strong>Recipient Emails:</strong> motazazaiza9@gmail.com, ungsc-hr@un.org, liaison@un.org, unictf-liaison@un.org, ungsc-cslc@un.org, scustomerservice@un.org, ftssm@un.org, gsc-osh@un.org, ungsc-information@un.org, newsonline@bbc.co.uk, cnn.feedback@cnn.com, contactus@aljazeera.net, editor@reuters.com, info@ap.org, news@skynews.com, observers@france24.com, feedback@dw.com, editor@bloomberg.net, info@nhk.or.jp, ungsccommunicationunit@un.org, everydaypalestine@gmail.com, MansourShoumanTalks@gmail.com, connect.to.ase@gmail.com, princekouta5@gmail.com, management.anat@gmail.com, Hind.khoudary@gmail.com, Ecollab@plestiaalaqad.com, dearwhitestaffer@gmail.com, ig@islamify.org
+        </p>
+
+        <label for="additional_recipients">Add Additional Emails (comma-separated):</label>
+        <input type="text" id="additional_recipients" name="additional_recipients">
+
+        <label for="subject">Email Subject:</label>
+        <input type="text" id="subject" name="subject" value="Urgent: Evidence of illegal crackdown on peaceful protesters in Bangladesh">
+
+        <label for="body">Email Body:</label>
+        <textarea id="body" name="body" rows="10">
+Dear concerned,
+You are already aware of the atrocious crimes committed by the Bangladesh government led by Sheikh Hasina to oppress the voice of Bangladeshi unarmed peaceful students demanding government job quota reformation. 
+According to some news sources, the death toll has exceeded 200, and thousands are injured. 
+While national media is strictly regulated by the Bangladesh government, we, the oppressed people, look forward to the attention of true, fair, and transparent international media. 
+Law enforcement agencies are unlawfully abducting people in the middle of the night, torturing them, and violating human rights. On top of that, they exert undue pressure to remove content shared on social media.
+
+I have attached evidence of these atrocities before they are taken down by the government. Please help us reach our message across the world. Let the world see what Bangladeshi students are facing.
+        
+Regards
+            
+        </textarea>
+
+        <input type="submit" value="Send Evidence">
+    </form>
+</body>
+</html>
