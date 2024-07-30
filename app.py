@@ -2,13 +2,13 @@ from flask import Flask, request, jsonify, render_template, send_from_directory
 import smtplib
 import os
 import subprocess
-import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
-import yt_dlp
 from werkzeug.utils import secure_filename
+import yt_dlp
+from celery import Celery
 
 
 def update_yt_dlp():
@@ -20,6 +20,13 @@ update_yt_dlp()
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "videos"
+app.config.update(
+    CELERY_BROKER_URL="redis://localhost:6379/0",
+    CELERY_RESULT_BACKEND="redis://localhost:6379/0",
+)
+
+celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"])
+celery.conf.update(app.config)
 
 
 def download_video(url, filename):
@@ -29,6 +36,11 @@ def download_video(url, filename):
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         ydl.download([url])
+
+
+@celery.task()
+def download_video_task(url, filename):
+    download_video(url, filename)
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -46,7 +58,7 @@ def index():
         body = request.form["body"]
 
         recipients = [
-            "dihan010@gmail.com"
+            "faisalahmed191509@gmail.com"
             # "motazazaiza9@gmail.com",
             # "ungsc-hr@un.org",
             # "liaison@un.org",
@@ -80,13 +92,20 @@ def index():
 
         errors = []
         filenames = []
+        tasks = []
+
         for i, link in enumerate(evidence_links):
+            video_filename = secure_filename(f"evidence_{i+1}.mp4")
+            task = download_video_task.apply_async(args=[link, video_filename])
+            tasks.append((task, video_filename))
+
+        # Wait for tasks to complete
+        for task, video_filename in tasks:
             try:
-                video_filename = secure_filename(f"evidence_{i+1}.mp4")
-                download_video(link, video_filename)
+                task.get(timeout=300)  # Wait for up to 5 minutes
                 filenames.append(video_filename)
             except Exception as e:
-                errors.append(f"Error downloading {link}: {str(e)}")
+                errors.append(f"Error downloading video: {str(e)}")
 
         if errors:
             return jsonify({"errors": errors})
@@ -109,7 +128,7 @@ def index():
             )
 
             msg.attach(part)
-            attachment.close()  # Ensure the file is properly closed
+            attachment.close()
 
         try:
             server = smtplib.SMTP("smtp.gmail.com", 587)
@@ -121,7 +140,6 @@ def index():
         except Exception as e:
             return jsonify({"error": str(e)})
 
-        # Delete the video files after sending the email
         for video_filename in filenames:
             filepath = os.path.join(app.config["UPLOAD_FOLDER"], video_filename)
             os.remove(filepath)
