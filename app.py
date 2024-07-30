@@ -21,8 +21,8 @@ update_yt_dlp()
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "videos"
 app.config.update(
-    CELERY_BROKER_URL="redis://localhost:6379/0",
-    CELERY_RESULT_BACKEND="redis://localhost:6379/0",
+    CELERY_BROKER_URL="redis://red-cqkh0u56l47c7384oq60:6379/0",
+    CELERY_RESULT_BACKEND="redis://red-cqkh0u56l47c7384oq60:6379/0",
 )
 
 celery = Celery(app.name, broker=app.config["CELERY_BROKER_URL"])
