@@ -1,6 +1,7 @@
 from flask import Flask, request, jsonify, render_template, send_from_directory
 import smtplib
 import os
+import subprocess
 import re
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -8,6 +9,14 @@ from email.mime.base import MIMEBase
 from email import encoders
 import yt_dlp
 from werkzeug.utils import secure_filename
+
+
+def update_yt_dlp():
+    subprocess.run(["pip", "install", "-U", "yt-dlp"])
+
+
+# Call the update function before starting the app
+update_yt_dlp()
 
 app = Flask(__name__)
 app.config["UPLOAD_FOLDER"] = "videos"
