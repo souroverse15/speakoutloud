@@ -1,0 +1,5 @@
+#!c:\users\sourove ahmed\desktop\speakoutloud\venv\scripts\python.exe
+
+from desktopmagic.scripts.screengrab_torture_test import main
+
+main()
