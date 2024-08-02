@@ -3,6 +3,7 @@
 <head>
     <title>Speak Out Loud!</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.1.0/socket.io.min.js"></script>
     <script>
         function showProgressPopup() {
             const popup = document.getElementById('progressPopup');
@@ -26,18 +27,27 @@
             })
             .then(response => response.json())
             .then(data => {
-                if (data.errors) {
-                    document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/76cI.gif" alt="Error"><p>' + data.errors.join('<br>') + '</p><button onclick="hideProgressPopup()">Close</button>';
-                } else if (data.error) {
-                    document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/76cI.gif" alt="Error"><p>' + data.error + '</p><button onclick="hideProgressPopup()">Close</button>';
+                if (data.success) {
+                    document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/7efs.gif" alt="Success"><p>' + data.success + '</p><button onclick="hideProgressPopup()">Close</button>';
                 } else {
-                    document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/7efs.gif" alt="Success"><p>Emails sent successfully!</p><button onclick="hideProgressPopup()">Close</button>';
+                    document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/76cI.gif" alt="Error"><p>' + data.errors.join('<br>') + '</p><button onclick="hideProgressPopup()">Close</button>';
                 }
             })
             .catch(error => {
                 document.getElementById('progressPopup').innerHTML = '<img src="https://i.gifer.com/76cI.gif" alt="Error"><p>An unexpected error occurred</p><button onclick="hideProgressPopup()">Close</button>';
             });
         }
+
+        const socket = io();
+
+        socket.on('progress', function(data) {
+            const progressPopup = document.getElementById('progressPopup');
+            if (data.status === 'completed') {
+                progressPopup.innerHTML += '<p>Download completed for: ' + data.video + '</p>';
+            } else {
+                progressPopup.innerHTML += '<p>Download failed for: ' + data.video + ' with error: ' + data.status + '</p>';
+            }
+        });
     </script>
 </head>
 <body>
