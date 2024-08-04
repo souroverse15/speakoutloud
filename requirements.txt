@@ -1,5 +1,5 @@
 Quart==0.17.0
-quart-socketio==2.3.3
+quart-socketio==2.3.0
 httpx==0.24.0
 yt-dlp
 Werkzeug==2.3.3
