@@ -1,5 +1,7 @@
-Flask==2.3.2
+Quart==0.17.0
+quart-socketio==2.3.3
+httpx==0.24.0
 yt-dlp
 Werkzeug==2.3.3
 gunicorn==20.1.0
-Flask-SocketIO==5.3.4
+hypercorn==0.13.2

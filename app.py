@@ -1,11 +1,12 @@
-from flask import Flask, request, jsonify, render_template
-from flask_socketio import SocketIO, emit
+from quart import Quart, request, jsonify, render_template
+from quart_socketio import SocketIO, emit
 import os
 import yt_dlp
 from werkzeug.utils import secure_filename
-import threading
+import asyncio
+import httpx
 
-app = Flask(__name__)
+app = Quart(__name__)
 socketio = SocketIO(app)
 
 # Define a list of recipient emails
@@ -43,7 +44,7 @@ recipient_emails = [
 ]
 
 
-def download_video(url, filename):
+async def download_video(url, filename):
     ydl_opts = {
         "outtmpl": filename,
         "format": "mp4",
@@ -52,45 +53,51 @@ def download_video(url, filename):
         ydl.download([url])
 
 
-def download_videos(urls, batch_size=5):
+async def download_videos(urls, batch_size=5):
     for i in range(0, len(urls), batch_size):
         batch = urls[i : i + batch_size]
-        for j, url in enumerate(batch):
+        tasks = [
+            download_video(url, secure_filename(f"evidence_{i + j + 1}.mp4"))
+            for j, url in enumerate(batch)
+        ]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        for j, result in enumerate(results):
             video_filename = secure_filename(f"evidence_{i + j + 1}.mp4")
-            try:
-                download_video(url, video_filename)
-                socketio.emit(
-                    "progress", {"video": video_filename, "status": "completed"}
+            if isinstance(result, Exception):
+                await socketio.emit(
+                    "progress",
+                    {"video": video_filename, "status": f"error: {str(result)}"},
                 )
-            except Exception as e:
-                socketio.emit(
-                    "progress", {"video": video_filename, "status": f"error: {str(e)}"}
+            else:
+                await socketio.emit(
+                    "progress", {"video": video_filename, "status": "completed"}
                 )
 
 
 @app.route("/", methods=["GET", "POST"])
-def index():
+async def index():
     if request.method == "POST":
-        email = request.form["email"]
-        password = request.form["password"]
-        evidence_links = request.form["evidence_links"].split()
+        form = await request.form
+        email = form["email"]
+        password = form["password"]
+        evidence_links = form["evidence_links"].split()
         additional_recipients = (
-            request.form["additional_recipients"].split(",")
-            if request.form["additional_recipients"]
+            form["additional_recipients"].split(",")
+            if form["additional_recipients"]
             else []
         )
-        subject = request.form["subject"]
-        body = request.form["body"]
+        subject = form["subject"]
+        body = form["body"]
 
         # Combine hardcoded recipient emails with additional recipients from the form
         recipients = recipient_emails + additional_recipients
 
-        # Start the video download in a separate thread
-        threading.Thread(target=download_videos, args=(evidence_links, 5)).start()
+        # Start the video download asynchronously
+        asyncio.create_task(download_videos(evidence_links, 5))
 
         return jsonify({"success": "Videos are being processed!"})
 
-    return render_template("index.html")
+    return await render_template("index.html")
 
 
 if __name__ == "__main__":
