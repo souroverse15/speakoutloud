@@ -1,5 +1,5 @@
 Quart==0.17.0
-quart-socketio==2.3.0
+git+https://github.com/miguelgrinberg/Flask-SocketIO#egg=quart-socketio
 httpx==0.24.0
 yt-dlp
 Werkzeug==2.3.3
